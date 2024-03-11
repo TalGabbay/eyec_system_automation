@@ -1,8 +1,9 @@
 import os
 import pytest
 from typing import List
-from test_tal_01.infra import file_utils
-from test_tal_01.infra.dfs_enums import ResponseFields
+from system_automation.infra import file_utils
+from system_automation.infra.dfs_enums import ResponseFields
+from system_automation.infra.scanner_utils import get_peak_degree
 
 
 @pytest.mark.sanity
@@ -17,7 +18,7 @@ def test_start_stop_mirror_scan(tester_lib_instance, initialize_system_for_scann
 
     response = tester_lib_instance.scn_stop_mirror_scan()
     msg = f"Mirror scan stop failed. Return status: {response[ResponseFields.STATUS.value]}"
-    assert response[ResponseFields.STATUS.value] == 'Done',msg
+    assert response[ResponseFields.STATUS.value] == 'Done', msg
 
     response = tester_lib_instance.scn_get_status()
     msg = f"Mirror scan status check after stop failed. Return status: {response[ResponseFields.OUTPUT.value]}"
@@ -37,16 +38,16 @@ def test_scn_abs_shift_mirror(tester_lib_instance, initialize_system_for_scannin
 
 
 @pytest.mark.sanity
-@pytest.mark.parametrize(("angle_list", "scan_time_list", "pattern"),
+@pytest.mark.parametrize(("angle", "scan_time", "pattern"),
                          [
                              ([30], [80], 4),
-                             ([30, 0, -30, 0], [50, 50, 50, 50], 5),
-                             ([60], [30], 6)
+                             ([35], [80], 5),
+                             ([90], [100], 6)
                          ])
 def test_set_active_pattern(tester_lib_instance,
                             initialize_system_for_scanning_test,
-                            angle_list, scan_time_list, pattern):
-    response = tester_lib_instance.scn_configure_pattern(angle=angle_list, scan_time=scan_time_list, pattern=pattern)
+                            angle, scan_time, pattern):
+    response = tester_lib_instance.scn_configure_pattern(angle=angle, scan_time=scan_time, pattern=pattern)
     msg = f"Configure scanning pattern failed. Return status: {response[ResponseFields.OUTPUT.value]}"
     assert response[ResponseFields.STATUS.value] == "Done", msg
 
@@ -71,12 +72,13 @@ def test_set_active_pattern(tester_lib_instance,
     file_utils.create_new_file(path + "/.record_ended")
     file_utils.create_new_file(path + "/.record_started")
 
-    result = tester_lib_instance.scn_record_hpos(1, True, path)
+    result = tester_lib_instance.scn_record_hpos(1, False, path)
     file_utils.delete_directory(path)
 
     position_list: List[float] = result[ResponseFields.OUTPUT.value]
-
-    # TODO process hpos data and compare it to input
+    delta = 1
+    actual_angle = get_peak_degree(position_list)
+    assert abs(angle[0] - actual_angle) <= delta
 
 
 @pytest.mark.sanity
@@ -131,4 +133,4 @@ def test_scn_get_fw_version(tester_lib_instance, initialize_system_for_scanning_
 def test_scn_enable_fw_flash(tester_lib_instance, initialize_system_for_scanning_test):
     response = tester_lib_instance.scn_enable_fw_flash()
     assert response[ResponseFields.STATUS.value] == "Error"
-    
+

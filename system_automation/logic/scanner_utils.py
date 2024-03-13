@@ -40,8 +40,10 @@ def turn_position_to_degree(data: List[float]) -> List[float]:
     return [(pos / (2 ** 24)) * 360 for pos in data]
 
 
-def calculate_differential(mirror_degree):
+def calculate_differential(data):
     dt = 100e-6  # seconds
+    mirror_degree = turn_position_to_degree(data)
+    mirror_degree = make_continuous(mirror_degree)
     timestamp = np.arange(1, len(mirror_degree) + 1) * dt  # Timestamp calculation
 
     # Calculate time difference between consecutive measurements
@@ -49,6 +51,7 @@ def calculate_differential(mirror_degree):
 
     # Calculate mirror velocity
     mirror_vel = np.diff(mirror_degree) / mirror_time_diff
+#    plot_graph(mirror_vel)
     return mirror_vel
 
 
@@ -64,7 +67,7 @@ def make_continuous(mirror_degree):
     """
     pos_discontinuity_constant = 200
     adjusted_positions = [pos - 360 if pos > pos_discontinuity_constant else pos for pos in mirror_degree]
-    plot_graph(adjusted_positions)
+#    plot_graph(adjusted_positions)
     return adjusted_positions
 
 

@@ -1,1 +1,1 @@
-gitlab clone
+GitHub clone
